@@ -1,0 +1,248 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String              @id @default(cuid())
+  email            String              @unique
+  passwordHash     String
+  displayName      String
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  profile          LearnerProfile?
+  progress         ItemProgress[]
+  attempts         AssessmentAttempt[]
+  conceptMasteries ConceptMastery[]
+  goalProgresses   GoalProgress[]
+  
+  // Real dynamic goals, leagues, and quests
+  goals            Goal[]
+  leagueMemberships LeagueMembership[]
+  dailyQuests      DailyQuest[]
+
+  @@map("users")
+}
+
+model LearnerProfile {
+  id                      String   @id @default(cuid())
+  userId                  String   @unique
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName             String
+  currentLessonId         String   @default("L01")
+  
+  // Onboarding & Preferences
+  onboardingCompleted     Boolean  @default(false)
+  soundEnabled            Boolean  @default(true)
+  mainGoal                String?  // "investing" | "saving" | "debt" | "corporate_finance"
+  knowledgeLevel          String?  // "beginner" | "intermediate" | "advanced"
+  dailyCommitmentMinutes  Int      @default(5) // 3 | 5 | 10
+  notificationTime        String?  // e.g. "09:00"
+  
+  // Virtual Currencies & Gamification
+  acornBalance            Int      @default(0)
+  totalXpEarned           Int      @default(0)
+  currentStreakDays       Int      @default(0)
+  longestStreakDays       Int      @default(0)
+  streakShieldsCount      Int      @default(2) // Battery charges (max 2)
+  lastActiveDate          DateTime?
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("learner_profiles")
+}
+
+model ItemProgress {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId        String
+  state         String    @default("available") // "locked" | "available" | "in_progress" | "completed"
+  activeSeconds Int       @default(0)
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([userId, itemId])
+  @@index([userId])
+  @@map("item_progress")
+}
+
+model AssessmentAttempt {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessmentId String
+  attemptNo    Int      @default(1)
+  startedAt    DateTime @default(now())
+  submittedAt  DateTime @default(now())
+  responses    String   // JSON string of AttemptResponse[]
+  score        Float    @default(0)
+  passed       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([userId, assessmentId])
+  @@map("assessment_attempts")
+}
+
+model ConceptMastery {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conceptId     String
+  mastery       Float    @default(0) // 0..1
+  band          String   @default("learning") // "learning" | "proficient" | "mastered"
+  evidenceCount Int      @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, conceptId])
+  @@index([userId])
+  @@map("concept_masteries")
+}
+
+model GoalProgress {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goalId    String
+  progress  Float    @default(0) // 0..1
+  status    String   @default("not_started") // "not_started" | "in_progress" | "met"
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, goalId])
+  @@index([userId])
+  @@map("goal_progress")
+}
+
+// ==========================================
+// ACORNLEARN NEW DESIGN SYSTEM MODELS
+// ==========================================
+
+enum GoalType {
+  LEARNING
+  SAVINGS
+  LONG_TERM
+}
+
+enum GoalStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+model Goal {
+  id                  String             @id @default(cuid())
+  userId              String
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type                GoalType
+  title               String             // e.g., "Emergency Fund", "Buy a house in Oluyole"
+  status              GoalStatus         @default(ACTIVE)
+  
+  // Financial Metrics (Values in Naira ₦)
+  targetAmount        Float?             // e.g. 79500000 for savings/long-term
+  currentAmount       Float              @default(0)
+  monthlyContribution Float?            // e.g. 500000
+  targetDate          DateTime?
+  
+  // Learning Goal Specifics
+  targetModuleId      String?            // "M01"
+  lessonsPerWeek      Int?               @default(3)
+  
+  // Relational Steps & Contributions
+  steps               GoalStep[]
+  contributions       GoalContribution[]
+  
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([userId, status])
+  @@map("goals")
+}
+
+model GoalStep {
+  id           String    @id @default(cuid())
+  goalId       String
+  goal         Goal      @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  stepNumber   Int
+  title        String    // e.g. "Save a deposit", "Check credit readiness"
+  actionText   String    // e.g. "Set aside ₦150,000 each month for 6 months"
+  targetAmount Float?
+  isCompleted  Boolean   @default(false)
+  completedAt  DateTime?
+
+  @@index([goalId, stepNumber])
+  @@map("goal_steps")
+}
+
+model GoalContribution {
+  id        String   @id @default(cuid())
+  goalId    String
+  goal      Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  amount    Float
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([goalId])
+  @@map("goal_contributions")
+}
+
+model LeagueCohort {
+  id         String             @id @default(cuid())
+  tier       String             // "Sapling" | "Seedling" | "Oak" | "Diamond"
+  division   Int                @default(2) // e.g. Division II
+  weekNumber Int                // e.g. 42
+  year       Int                @default(2026)
+  startsAt   DateTime
+  endsAt     DateTime           // Weekly Sunday 23:59:59 UTC
+  members    LeagueMembership[]
+
+  @@unique([tier, division, weekNumber, year])
+  @@map("league_cohorts")
+}
+
+model LeagueMembership {
+  id           String       @id @default(cuid())
+  cohortId     String
+  cohort       LeagueCohort @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weeklyXp     Int          @default(0)
+  rank         Int          @default(30)
+  previousRank Int          @default(30)
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([cohortId, userId])
+  @@index([cohortId, weeklyXp(sort: Desc)])
+  @@map("league_memberships")
+}
+
+model DailyQuest {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questDate    String   // "YYYY-MM-DD"
+  questType    String   // "LESSON_COMPLETE" | "PERFECT_SCORE" | "STREAK_ACTIVE"
+  title        String
+  targetCount  Int      @default(1)
+  currentCount Int      @default(0)
+  rewardXp     Int      @default(20)
+  rewardAcorns Int      @default(10)
+  isCompleted  Boolean  @default(false)
+  isClaimed    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, questDate, questType])
+  @@index([userId, questDate])
+  @@map("daily_quests")
+}

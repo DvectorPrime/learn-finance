@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/financial-literacy/widget-config.schema.json",
+  "title": "Financial Literacy Interaction Config",
+  "description": "Common envelope for config-driven learning interactions. The exact config shape depends on widget_type.",
+  "type": "object",
+  "required": ["widget_type", "config"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "widget_type": {"type": "string", "enum": ["choice_with_reflection", "drag_drop_trade", "simulation_compare_rounds", "allocation_basket", "sort_into_buckets", "numeric_calculator", "allocation_slider", "scenario_simulator", "option_comparison", "choose_path", "progress_tracker", "multiple_choice_quiz", "multi_select", "sequence_ordering", "match_pairs", "true_false", "range_estimator", "budget_prioritizer", "need_want_sorter", "risk_reward_comparison", "decision_tree", "goal_planner", "cash_flow_classifier", "net_worth_calculator", "inflation_calculator", "loan_repayment_calculator", "savings_growth_calculator", "timeline_builder", "confidence_reflection", "branching_scenario"]},
+    "config": {"type": "object"},
+    "title": {"type": "string"},
+    "subtitle": {"type": "string"},
+    "learning_objective": {"type": "string"},
+    "feedback": {"type": "string"}
+  },
+  "additionalProperties": true
+}

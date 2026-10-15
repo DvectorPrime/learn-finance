@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito+Sans:wght@600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #4be277;
+  --color-primary-dark: #22c55e;
+  --color-primary-light: #86efac;
+}
+
+@layer base {
+  html, body {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #050505;
+    color: #F5F5F5;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Acornlearn / Stitch Typography */
+.font-headline {
+  font-family: 'Nunito Sans', sans-serif;
+}
+
+.font-body {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Glassmorphism Classes from Stitch Design System */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.glass-panel-hover:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bg-primary {
+  background-color: #4be277 !important;
+}
+
+.text-primary {
+  color: #4be277 !important;
+}
+
+.border-primary {
+  border-color: #4be277 !important;
+}
+
+/* Custom Mascot Animations */
+@keyframes bounce-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes tail-wag {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(10deg); }
+}
+
+@keyframes float-acorn {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.04); }
+}
+
+.animate-bounce-gentle {
+  animation: bounce-gentle 3.5s ease-in-out infinite;
+}
+
+.animate-tail {
+  transform-origin: 190px 240px;
+  animation: tail-wag 2.5s ease-in-out infinite;
+}
+
+.animate-acorn {
+  animation: float-acorn 2.8s ease-in-out infinite;
+}
